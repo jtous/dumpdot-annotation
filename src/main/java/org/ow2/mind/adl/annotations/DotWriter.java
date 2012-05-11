@@ -70,6 +70,7 @@ public class DotWriter {
 			int serverItf = 0;
 			final Definition definition = ASTHelper.getResolvedDefinition(component.getDefinitionReference(), null, null);
 			currentPrinter.print(component.getName() + "[URL=\"" + compName + "." + component.getName() + ".dot\"shape=Mrecord,style=filled,fillcolor=lightgrey,label=\"" + component.getName() + " | {{ " );
+			if (definition instanceof InterfaceContainer) {
 			final Interface[] interfaces = ((InterfaceContainer) definition).getInterfaces();
 			for (int i = 0; i < interfaces.length; i++) {
 				final MindInterface itf = (MindInterface) interfaces[i];
@@ -94,7 +95,7 @@ public class DotWriter {
 			currentPrinter.println("");
 			if (clientItf > maxItf) maxItf = clientItf;
 			if (serverItf > maxItf) maxItf = serverItf;
-
+			}
 		} catch (final ADLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
