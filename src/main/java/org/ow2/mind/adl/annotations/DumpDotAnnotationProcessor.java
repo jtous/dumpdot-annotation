@@ -24,6 +24,7 @@ package org.ow2.mind.adl.annotations;
 
 import java.io.*;
 import java.util.Map;
+import java.util.TreeSet;
 
 import org.objectweb.fractal.adl.ADLException;
 import org.objectweb.fractal.adl.Definition;
@@ -59,13 +60,15 @@ AbstractADLLoaderAnnotationProcessor {
 		for (int i = 0; i < subComponents.length; i++) {
 			currentDot.addSubComponent(subComponents[i]);
 		}
-		final Binding[] bindings = ((BindingContainer) definition)
-				.getBindings();
-		for (int i = 0; i < bindings.length; i++) {
-			final Binding binding = bindings[i];
+		
+		TreeSet<Binding> bindings = new TreeSet<Binding>( new BindingComparator() );
+		for ( Binding binding: ((BindingContainer) definition).getBindings() ) {
+			bindings.add(binding);
+		}
+		for (Binding binding : bindings) {
 			currentDot.addBinding(binding);
 		}
-
+		
 		for (int i = 0; i < subComponents.length; i++) {
 			final Component subComponent = subComponents[i];
 			showComponents(subComponent, instanceName);
@@ -90,20 +93,19 @@ AbstractADLLoaderAnnotationProcessor {
 
 			DotWriter currentDot = new DotWriter(buildDir, instanceName);
 
-			final Interface[] interfaces = ((InterfaceContainer) definition).getInterfaces();
-			for (int i = 0; i < interfaces.length; i++) {
-				final MindInterface itf = (MindInterface) interfaces[i];
+			TreeSet<MindInterface> interfaces = new TreeSet<MindInterface>(new MindInterfaceComparator());
+			for (Interface itf : ((InterfaceContainer) definition).getInterfaces())
+				interfaces.add((MindInterface) itf); 
+			
+			for (MindInterface itf : interfaces) {
 				if (itf.getRole()==TypeInterface.SERVER_ROLE) {
 					currentDot.addServer(itf.getName());
 				}
-			}
-			for (int i = 0; i < interfaces.length; i++) {
-				final MindInterface itf = (MindInterface) interfaces[i];	
 				if (itf.getRole()==TypeInterface.CLIENT_ROLE) {
 					currentDot.addClient(itf.getName());
 				}
 			}
-
+			
 			if (ASTHelper.isComposite(definition)) {
 				showComposite(definition, instanceName, currentDot);
 			} else if (ASTHelper.isPrimitive(definition)) {

@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.TreeSet;
 
 import org.objectweb.fractal.adl.interfaces.Interface;
 import org.objectweb.fractal.adl.interfaces.InterfaceContainer;
@@ -71,37 +72,43 @@ public class DotWriter {
 			final Definition definition = ASTHelper.getResolvedDefinition(component.getDefinitionReference(), null, null);
 			currentPrinter.print(component.getName() + "[URL=\"" + compName + "." + component.getName() + ".dot\"shape=Mrecord,style=filled,fillcolor=lightgrey,label=\"" + component.getName() + " | {{ " );
 			if (definition instanceof InterfaceContainer) {
-			final Interface[] interfaces = ((InterfaceContainer) definition).getInterfaces();
-			for (int i = 0; i < interfaces.length; i++) {
-				final MindInterface itf = (MindInterface) interfaces[i];
-				if (itf.getRole()==TypeInterface.SERVER_ROLE) {
-					if ( serverItf !=0 ) currentPrinter.print(" | ");
-					currentPrinter.print("<" + itf.getName() + "> " + itf.getName());
-					serverItf++;
-					//itf.getSignature()); //TODO might put this info somwher latter
+
+				TreeSet<MindInterface> interfaces = new TreeSet<MindInterface>(new MindInterfaceComparator());
+				for (Interface itf : ((InterfaceContainer) definition).getInterfaces())
+					interfaces.add((MindInterface) itf); 
+				//final Interface[] interfaces = ((InterfaceContainer) definition).getInterfaces();
+				//			for (int i = 0; i < interfaces.length; i++) {
+				//				final MindInterface itf = (MindInterface) interfaces[i];
+				for (MindInterface itf : interfaces) {
+					if (itf.getRole()==TypeInterface.SERVER_ROLE) {
+						if ( serverItf !=0 ) currentPrinter.print(" | ");
+						currentPrinter.print("<" + itf.getName() + "> " + itf.getName());
+						serverItf++;
+						//itf.getSignature()); //TODO might put this info somwhere latter
+					}
 				}
-			}
-			currentPrinter.print(" } | | { ");
-			for (int i = 0; i < interfaces.length; i++) {
-				final MindInterface itf = (MindInterface) interfaces[i];	
-				if (itf.getRole()==TypeInterface.CLIENT_ROLE) {
-					if ( clientItf !=0 ) currentPrinter.print(" | ");
-					currentPrinter.print("<" + itf.getName() + "> " + itf.getName());
-					clientItf++;
-					//itf.getSignature());
+				currentPrinter.print(" } | | { ");
+				//			for (int i = 0; i < interfaces.length; i++) {
+				//				final MindInterface itf = (MindInterface) interfaces[i];	
+				for (MindInterface itf : interfaces) {	
+					if (itf.getRole()==TypeInterface.CLIENT_ROLE) {
+						if ( clientItf !=0 ) currentPrinter.print(" | ");
+						currentPrinter.print("<" + itf.getName() + "> " + itf.getName());
+						clientItf++;
+						//itf.getSignature());
+					}
 				}
-			}
-			currentPrinter.print(" }} | \" ];");
-			currentPrinter.println("");
-			if (clientItf > maxItf) maxItf = clientItf;
-			if (serverItf > maxItf) maxItf = serverItf;
+				currentPrinter.print(" }} | \" ];");
+				currentPrinter.println("");
+				if (clientItf > maxItf) maxItf = clientItf;
+				if (serverItf > maxItf) maxItf = serverItf;
 			}
 		} catch (final ADLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
-	
+
 	public void addBinding(Binding binding) {
 		color++;
 		if (color >= 12) color=1;
@@ -113,13 +120,13 @@ public class DotWriter {
 		if (tc == "this") tc="Clients";
 		currentPrinter.println( fc + ":" + fi + "->" + tc + ":" + ti + "[tailport=e headport=w colorscheme=\"paired12\" color=" + color + "];");	
 	}
-	
+
 	public void addSource(Source source) {
 		if (srcNb != 0) srcs = srcs + " | ";
 		srcs=srcs + source.getPath();
 		srcNb++;
 	}
-	
+
 	public void addServer(String itf) {
 		if (srvItfsNb != 0) srvItfs=srvItfs + " | ";
 		srvItfs=srvItfs + "<" + itf + "> " + itf;
@@ -134,9 +141,9 @@ public class DotWriter {
 
 	public void close() {
 		writeFooter();
-		
+
 	}
-	
+
 	private void writeFooter() {
 		if (cltItfsNb > maxItf) maxItf=cltItfsNb;
 		if (srvItfsNb > maxItf) maxItf=srvItfsNb;
