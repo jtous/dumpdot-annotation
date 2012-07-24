@@ -10,6 +10,7 @@ import org.objectweb.fractal.adl.interfaces.Interface;
 import org.objectweb.fractal.adl.interfaces.InterfaceContainer;
 import org.ow2.mind.adl.ast.ASTHelper;
 import org.ow2.mind.adl.ast.Component;
+import org.ow2.mind.adl.ast.DefinitionReference;
 import org.ow2.mind.adl.ast.MindInterface;
 import org.ow2.mind.adl.ast.Source;
 import org.objectweb.fractal.adl.ADLException;
@@ -69,7 +70,8 @@ public class DotWriter {
 		try {
 			int clientItf = 0;
 			int serverItf = 0;
-			final Definition definition = ASTHelper.getResolvedDefinition(component.getDefinitionReference(), null, null);
+			DefinitionReference defRef = component.getDefinitionReference();
+			final Definition definition = ASTHelper.getResolvedDefinition(defRef, null, null);
 			currentPrinter.print(component.getName() + "[URL=\"" + compName + "." + component.getName() + ".dot\"shape=Mrecord,style=filled,fillcolor=lightgrey,label=\"" + component.getName() + " | {{ " );
 			if (definition instanceof InterfaceContainer) {
 

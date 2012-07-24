@@ -31,7 +31,7 @@ import org.ow2.mind.annotation.AnnotationTarget;
 /**
  * @author Julien TOUS
  */
-@ADLLoaderProcessor(processor = DumpDotAnnotationProcessor.class, phases = { ADLLoaderPhase.AFTER_CHECKING })
+@ADLLoaderProcessor(processor = DumpDotAnnotationProcessor.class, phases = { ADLLoaderPhase.AFTER_TEMPLATE_INSTANTIATE/*AFTER_CHECKING*/ })
 public class DumpDot implements Annotation {
 
     /**
