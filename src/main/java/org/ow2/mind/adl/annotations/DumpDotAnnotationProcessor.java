@@ -32,6 +32,7 @@ import org.objectweb.fractal.adl.Node;
 import org.objectweb.fractal.adl.interfaces.Interface;
 import org.objectweb.fractal.adl.interfaces.InterfaceContainer;
 import org.objectweb.fractal.adl.types.TypeInterface;
+import org.ow2.mind.PathHelper;
 import org.ow2.mind.adl.annotation.ADLLoaderPhase;
 import org.ow2.mind.adl.annotation.AbstractADLLoaderAnnotationProcessor;
 import org.ow2.mind.adl.ast.ASTHelper;
@@ -52,6 +53,7 @@ import org.ow2.mind.adl.annotations.DotWriter;
 public class DumpDotAnnotationProcessor extends
 AbstractADLLoaderAnnotationProcessor {
 
+	private Map<Object,Object> context;
 	private String buildDir;
 
 	private void showComposite(final Definition definition, String instanceName, DotWriter currentDot) {
@@ -78,6 +80,7 @@ AbstractADLLoaderAnnotationProcessor {
 
 	private void showPrimitive(final Definition definition, String instanceName, DotWriter currentDot) {
 		final Source[] sources = ((ImplementationContainer) definition).getSources();
+		
 		for (int i = 0; i < sources.length; i++) {
 			currentDot.addSource(sources[i]);
 		}
@@ -91,7 +94,7 @@ AbstractADLLoaderAnnotationProcessor {
 					.getDefinitionReference(), null, null);
 			instanceName = instanceName + "." + component.getName();
 
-			DotWriter currentDot = new DotWriter(buildDir, instanceName);
+			DotWriter currentDot = new DotWriter(buildDir, instanceName, context);
 
 			TreeSet<MindInterface> interfaces = new TreeSet<MindInterface>(new MindInterfaceComparator());
 			for (Interface itf : ((InterfaceContainer) definition).getInterfaces())
@@ -132,14 +135,15 @@ AbstractADLLoaderAnnotationProcessor {
 	 */
 	public Definition processAnnotation(final Annotation annotation,
 			final Node node, final Definition definition,
-			final ADLLoaderPhase phase, final Map<Object, Object> context)
+			final ADLLoaderPhase phase, final Map<Object, Object> cont)
 					throws ADLException {
 		assert annotation instanceof DumpDot;
+		context = cont;
 
 		String topLevelName = "TopLevel"; //FIXME get the executable name.
 
 		buildDir = ((File) context.get(BasicOutputFileLocator.OUTPUT_DIR_CONTEXT_KEY)).getPath() +  File.separator;
-		DotWriter topDot = new DotWriter(buildDir, topLevelName);
+		DotWriter topDot = new DotWriter(buildDir, topLevelName, cont);
 		if (ASTHelper.isComposite(definition)) {
 			showComposite(definition, topLevelName, topDot);
 		} else if (ASTHelper.isPrimitive(definition)) {

@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.URL;
+import java.util.Map;
 import java.util.TreeSet;
 
 import org.objectweb.fractal.adl.interfaces.Interface;
@@ -16,16 +18,18 @@ import org.ow2.mind.adl.ast.Source;
 import org.objectweb.fractal.adl.ADLException;
 import org.objectweb.fractal.adl.Definition;
 import org.ow2.mind.adl.ast.Binding;
+import org.ow2.mind.adl.implementation.BasicImplementationLocator;
 import org.objectweb.fractal.adl.types.TypeInterface;
 
-public class DotWriter {
 
+public class DotWriter {
+	//public static final String            DUMP_DOT = "DumpDot";
 	private PrintWriter currentPrinter;
 	private String compName;
 	private String localName;
 	private String buildDir;
 	private String fileName;
-	private String srcs="Sources [shape=record,label=\" {{ ";
+	private String srcs="subgraph cluster_sources {\ncolor=none;\n";
 	private int srcNb=0;
 	private String srvItfs="Servers [rank=sink,shape=Mrecord,style=filled,fillcolor=blue,label=\" Servers | {{ ";
 	private int srvItfsNb=0;
@@ -33,8 +37,14 @@ public class DotWriter {
 	private int cltItfsNb=0;
 	private int maxItf=0; // Used to adapt the size of composite interface boxes
 	private int color=1;
+	private Map<Object, Object> context;
 
-	public DotWriter(String dir, String name) {
+	//@Inject
+	//@Named(DUMP_DOT)
+	public BasicImplementationLocator implementationLocatorItf = new BasicImplementationLocator();
+	
+	public DotWriter(String dir, String name, Map<Object, Object> cont) {
+		context=cont;
 		try {
 			compName = name;
 			final int i = name.lastIndexOf('.');
@@ -124,8 +134,8 @@ public class DotWriter {
 	}
 
 	public void addSource(Source source) {
-		if (srcNb != 0) srcs = srcs + " | ";
-		srcs=srcs + source.getPath();
+		URL url = implementationLocatorItf.findSource(source.getPath(), context);
+		srcs=srcs + srcNb + "[label=\"" + source.getPath() + "\", URL=\"" + url.getPath() +"\"];\n";
 		srcNb++;
 	}
 
@@ -152,12 +162,14 @@ public class DotWriter {
 		if (srcNb > maxItf) maxItf=srcNb;
 		srvItfs=srvItfs + "}} | \",height=" + ((int)((maxItf+3)/2)) + " ];";
 		cltItfs=cltItfs + "}} | \",height=" + ((int)((maxItf+3)/2)) + " ];";
-		srcs=srcs + " }} \" ];";
+		srcs=srcs + "}\n";
 		if (srvItfsNb > 0) currentPrinter.println(srvItfs);
 		if (cltItfsNb > 0) currentPrinter.println(cltItfs);
 		if (srcNb > 0) currentPrinter.println(srcs);
-		if ((srvItfsNb*srcNb) > 0) currentPrinter.println("Servers->Sources[color=none]");
-		if ((srcNb*cltItfsNb) > 0)currentPrinter.println("Sources->Clients[color=none]");
+		for (int i=0; i<srcNb; i++) {
+			if ((srvItfsNb*srcNb) > 0) currentPrinter.println("Servers->"+i+"[color=none]");
+			if ((srcNb*cltItfsNb) > 0)currentPrinter.println(i+"->Clients[color=none]");
+		}
 		currentPrinter.println("}");
 		currentPrinter.println("}");
 		currentPrinter.close();

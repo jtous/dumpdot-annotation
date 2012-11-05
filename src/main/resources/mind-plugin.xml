@@ -20,14 +20,16 @@
  Contributors: Matthieu Leclercq
 
  -->
-<plugin
-    id="org.ow2.mind.dumpdot-annotations"
-    name="DumpDot annotations plug-in.">
-    <extension
-        point="org.ow2.mind.predefined-annotations">
+<plugin id="org.ow2.mind.dumpdot-annotations" name="DumpDot annotations plug-in.">
+	<extension point="org.ow2.mind.predefined-annotations">
+		<annotation package="org.ow2.mind.adl.annotations" />
+	</extension>
 
-        <annotation
-            package="org.ow2.mind.adl.annotations" />
-
-    </extension>
+ <!-- 	<extension point="org.ow2.mind.plugin.guice-module">
+		<module class="org.ow2.mind.adl.annotations.DumpDotModule">
+		<combine
+                class="org.ow2.mind.CommonFrontendModule" />
+                </module>
+	</extension>
+  -->
 </plugin>
