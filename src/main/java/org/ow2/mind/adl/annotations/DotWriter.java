@@ -134,9 +134,11 @@ public class DotWriter {
 	}
 
 	public void addSource(Source source) {
-		URL url = implementationLocatorItf.findSource(source.getPath(), context);
-		srcs=srcs + srcNb + "[label=\"" + source.getPath() + "\", URL=\"" + url.getPath() +"\"];\n";
-		srcNb++;
+		if (source.getPath() != null) {
+			URL url = implementationLocatorItf.findSource(source.getPath(), context);
+			srcs=srcs + srcNb + "[label=\"" + source.getPath() + "\", URL=\"" + url.getPath() +"\"];\n";
+			srcNb++;
+		}
 	}
 
 	public void addServer(String itf) {
