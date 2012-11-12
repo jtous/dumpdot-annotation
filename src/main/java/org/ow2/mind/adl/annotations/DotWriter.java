@@ -4,7 +4,9 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.util.Map;
 import java.util.TreeSet;
 
@@ -136,7 +138,15 @@ public class DotWriter {
 	public void addSource(Source source) {
 		if (source.getPath() != null) {
 			URL url = implementationLocatorItf.findSource(source.getPath(), context);
-			srcs=srcs + srcNb + "[label=\"" + source.getPath() + "\", URL=\"" + url.getPath() +"\"];\n";
+			String s;
+			try {
+				File f;
+				f = new File( URLDecoder.decode( url.getFile(), "UTF-8" ));
+				s = "\", URL=\"" + f.getAbsolutePath() + "\"";
+			} catch (UnsupportedEncodingException e) {
+				s = "";
+			}
+			srcs=srcs + srcNb + "[label=\"" + source.getPath() + s + "];\n";
 			srcNb++;
 		}
 	}
