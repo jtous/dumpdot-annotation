@@ -1,0 +1,2 @@
+MindViewer allows to navigate dot graph created during the compilation process.
+To create the dot graphs use the @DumpDot annotation on your top level  component 

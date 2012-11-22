@@ -1,0 +1,12 @@
+#!/bin/bash
+
+if [ -d $MIND_ROOT ]
+then
+	#Nothing to do
+	echo -n ""
+else
+	MIND_ROOT=$(dirname $(which mindc))
+fi
+
+python $MIND_ROOT/tools/MindViewer/MindViewer.py $*
+
