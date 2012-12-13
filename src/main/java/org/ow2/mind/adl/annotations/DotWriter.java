@@ -33,9 +33,9 @@ public class DotWriter {
 	private String fileName;
 	private String srcs="subgraph cluster_sources {\ncolor=none;\n";
 	private int srcNb=0;
-	private String srvItfs="Servers [rank=sink,shape=Mrecord,style=filled,fillcolor=blue,label=\" Servers | {{ ";
+	private String srvItfs="{rank=source; Servers [shape=Mrecord,style=filled,fillcolor=blue,label=\" Servers | {{ ";
 	private int srvItfsNb=0;
-	private String cltItfs="Clients [rank=source,shape=Mrecord,style=filled,fillcolor=blue,label=\" Clients | {{ ";;
+	private String cltItfs="{rank=sink Clients [shape=Mrecord,style=filled,fillcolor=blue,label=\" Clients | {{ ";;
 	private int cltItfsNb=0;
 	private int maxItf=0; // Used to adapt the size of composite interface boxes
 	private int color=1;
@@ -172,8 +172,8 @@ public class DotWriter {
 		if (cltItfsNb > maxItf) maxItf=cltItfsNb;
 		if (srvItfsNb > maxItf) maxItf=srvItfsNb;
 		if (srcNb > maxItf) maxItf=srcNb;
-		srvItfs=srvItfs + "}} | \",height=" + ((int)((maxItf+3)/2)) + " ];";
-		cltItfs=cltItfs + "}} | \",height=" + ((int)((maxItf+3)/2)) + " ];";
+		srvItfs=srvItfs + "}} | \",height=" + ((int)((maxItf+3)/2)) + " ];}";
+		cltItfs=cltItfs + "}} | \",height=" + ((int)((maxItf+3)/2)) + " ];}";
 		srcs=srcs + "}\n";
 		if (srvItfsNb > 0) currentPrinter.println(srvItfs);
 		if (cltItfsNb > 0) currentPrinter.println(cltItfs);
