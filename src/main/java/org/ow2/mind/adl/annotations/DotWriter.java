@@ -12,6 +12,8 @@ import java.util.TreeSet;
 
 import org.objectweb.fractal.adl.interfaces.Interface;
 import org.objectweb.fractal.adl.interfaces.InterfaceContainer;
+import org.ow2.mind.NameHelper;
+import org.ow2.mind.PathHelper;
 import org.ow2.mind.adl.ast.ASTHelper;
 import org.ow2.mind.adl.ast.Component;
 import org.ow2.mind.adl.ast.DefinitionReference;
@@ -44,7 +46,7 @@ public class DotWriter {
 	//@Inject
 	//@Named(DUMP_DOT)
 	public BasicImplementationLocator implementationLocatorItf = new BasicImplementationLocator();
-	
+
 	public DotWriter(String dir, String name, Map<Object, Object> cont) {
 		context=cont;
 		try {
@@ -123,6 +125,90 @@ public class DotWriter {
 		}
 	}
 
+	/**
+	 * We only support html links for mindoc here yet.
+	 * And the relative paths calculation is quite brutal (concerning ../ ).
+	 * 
+	 * /!\ The dot mode is BROKEN in definition mode /!\
+	 * TODO (SSZ): enable a dot mode ?
+	 * @param component
+	 */
+	public void addSubComponentWithDefinitionMode(Component component, boolean mindocCompatibility) {
+		try {
+			int clientItf = 0;
+			int serverItf = 0;
+			DefinitionReference defRef = component.getDefinitionReference();
+			final Definition definition = ASTHelper.getResolvedDefinition(defRef, null, null);
+
+			// the mindoc @figure tag uses the package name for folders and subfolder "doc-files"
+			if(mindocCompatibility) {
+
+				String currentFileName = compName;
+				String[] splitName = NameHelper.splitName(currentFileName);
+				StringBuilder backToOutputDir = new StringBuilder();
+				for(int i = 0; i < (splitName.length-1) ; i++) {
+					backToOutputDir.append("../");
+				}
+				// this bonus "../" counts because our SVG will be located in the "doc-files" subfolder
+				backToOutputDir.append("../");
+
+				String packageDirName = PathHelper.fullyQualifiedNameToDirName(definition.getName());
+				// here the return dirName will start with "/" : careful !
+				String targetHtmlFileDirName = packageDirName.substring(1) + "/";
+				File targetHtmlFileDir = new File(targetHtmlFileDirName);
+				targetHtmlFileDir.mkdirs();
+
+				// compute definition short name (removing package)
+				String shortDefName = null;
+				int i = definition.getName().lastIndexOf('.');
+				if (i == -1) shortDefName = definition.getName();
+				else shortDefName = definition.getName().substring(i + 1);
+
+				// mindoc naming convention includes ".ADL"
+				// please note we use target="main-frame" for SVG to replace the current frame (otherwise only the embed containing SVG is replaced)
+				currentPrinter.print(component.getName() + "[URL=\"" + backToOutputDir.toString() + targetHtmlFileDirName + shortDefName + ".ADL" + ".html\",target=\"main-frame\",shape=Mrecord,style=filled,fillcolor=lightgrey,label=\"" + component.getName() + " | {{ " );
+			} else 
+				currentPrinter.print(component.getName() + "[URL=\"" + compName + "." + component.getName() + ".dot\",shape=Mrecord,style=filled,fillcolor=lightgrey,label=\"" + component.getName() + " | {{ " );
+
+
+			if (definition instanceof InterfaceContainer) {
+
+				TreeSet<MindInterface> interfaces = new TreeSet<MindInterface>(new MindInterfaceComparator());
+				for (Interface itf : ((InterfaceContainer) definition).getInterfaces())
+					interfaces.add((MindInterface) itf); 
+				//final Interface[] interfaces = ((InterfaceContainer) definition).getInterfaces();
+				//			for (int i = 0; i < interfaces.length; i++) {
+				//				final MindInterface itf = (MindInterface) interfaces[i];
+				for (MindInterface itf : interfaces) {
+					if (itf.getRole()==TypeInterface.SERVER_ROLE) {
+						if ( serverItf !=0 ) currentPrinter.print(" | ");
+						currentPrinter.print("<" + itf.getName() + "> " + itf.getName());
+						serverItf++;
+						//itf.getSignature()); //TODO might put this info somwhere latter
+					}
+				}
+				currentPrinter.print(" } | | { ");
+				//			for (int i = 0; i < interfaces.length; i++) {
+				//				final MindInterface itf = (MindInterface) interfaces[i];	
+				for (MindInterface itf : interfaces) {	
+					if (itf.getRole()==TypeInterface.CLIENT_ROLE) {
+						if ( clientItf !=0 ) currentPrinter.print(" | ");
+						currentPrinter.print("<" + itf.getName() + "> " + itf.getName());
+						clientItf++;
+						//itf.getSignature());
+					}
+				}
+				currentPrinter.print(" }} | \" ];");
+				currentPrinter.println("");
+				if (clientItf > maxItf) maxItf = clientItf;
+				if (serverItf > maxItf) maxItf = serverItf;
+			}
+		} catch (final ADLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
 	public void addBinding(Binding binding) {
 		color++;
 		if (color >= 12) color=1;
@@ -135,18 +221,20 @@ public class DotWriter {
 		currentPrinter.println( fc + ":" + fi + "->" + tc + ":" + ti + "[tailport=e headport=w colorscheme=\"paired12\" color=" + color + "];");	
 	}
 
-	public void addSource(Source source) {
+	public void addSource(Source source, boolean mindocCompatibility) {
 		if (source.getPath() != null) {
-			URL url = implementationLocatorItf.findSource(source.getPath(), context);
-			String s;
-			try {
-				File f;
-				f = new File( URLDecoder.decode( url.getFile(), "UTF-8" ));
-				s = "\", URL=\"" + f.getAbsolutePath() + "\"";
-			} catch (UnsupportedEncodingException e) {
-				s = "";
+			String s = "";
+			if (!mindocCompatibility) {
+				URL url = implementationLocatorItf.findSource(source.getPath(), context);
+				try {
+					File f;
+					f = new File( URLDecoder.decode( url.getFile(), "UTF-8" ));
+					s = "\", URL=\"" + f.getAbsolutePath() + "\"";
+				} catch (UnsupportedEncodingException e) {
+					s = "";
+				}
 			}
-			srcs=srcs + srcNb + "[label=\"" + source.getPath() + s + "];\n";
+			srcs=srcs + srcNb + "[label=\"" + source.getPath() + s + "\""+ "];\n";
 			srcNb++;
 		}
 	}

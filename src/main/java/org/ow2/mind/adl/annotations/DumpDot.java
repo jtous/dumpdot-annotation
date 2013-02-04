@@ -26,12 +26,13 @@ import org.ow2.mind.adl.annotation.ADLAnnotationTarget;
 import org.ow2.mind.adl.annotation.ADLLoaderPhase;
 import org.ow2.mind.adl.annotation.ADLLoaderProcessor;
 import org.ow2.mind.annotation.Annotation;
+import org.ow2.mind.annotation.AnnotationElement;
 import org.ow2.mind.annotation.AnnotationTarget;
 
 /**
  * @author Julien TOUS
  */
-@ADLLoaderProcessor(processor = DumpDotAnnotationProcessor.class, phases = { ADLLoaderPhase.AFTER_TEMPLATE_INSTANTIATE/*AFTER_CHECKING*/ })
+@ADLLoaderProcessor(processor = DumpDotAnnotationProcessor.class, phases = { ADLLoaderPhase.AFTER_TEMPLATE_INSTANTIATE,  ADLLoaderPhase.AFTER_CHECKING })
 public class DumpDot implements Annotation {
 
     /**
@@ -40,6 +41,21 @@ public class DumpDot implements Annotation {
 	private static final long serialVersionUID = 1L;
 	private static final AnnotationTarget[] ANNOTATION_TARGETS = { ADLAnnotationTarget.DEFINITION };
 
+	/**
+	 * A field to specify additional output format
+	 */
+	@AnnotationElement(hasDefaultValue=true)
+	public String generateImages = "none";
+	
+	/**
+	 * A field to allow definition-oriented dot files generation (default is instance/application-oriented).
+	 */
+	@AnnotationElement(hasDefaultValue=true)
+	public boolean generateForDefinitions = false;
+	
+	@AnnotationElement(hasDefaultValue=true)
+	public boolean mindocCompatibility = false;
+	
     /*
      * (non-Javadoc)
      * 
