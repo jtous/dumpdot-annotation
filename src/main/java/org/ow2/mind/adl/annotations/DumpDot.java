@@ -41,20 +41,24 @@ public class DumpDot implements Annotation {
 	private static final long serialVersionUID = 1L;
 	private static final AnnotationTarget[] ANNOTATION_TARGETS = { ADLAnnotationTarget.DEFINITION };
 
-	/**
-	 * A field to specify additional output format
-	 */
-	@AnnotationElement(hasDefaultValue=true)
-	public String generateImages = "none";
+//	/**
+//	 * A field to specify additional output format
+//	 */
+//	@AnnotationElement(hasDefaultValue=false)
+//	public String generateImages = "none";
+//	
+//	/**
+//	 * A field to allow definition-oriented dot files generation (default is instance/application-oriented).
+//	 */
+//	@AnnotationElement(hasDefaultValue=true)
+//	public boolean generateForDefinitions = false;
 	
 	/**
-	 * A field to allow definition-oriented dot files generation (default is instance/application-oriented).
+	 * This field is a shortcut to set "generateImages = svg" and "generateForDefinitions = true"
+	 * in a more user-friendly way.
 	 */
 	@AnnotationElement(hasDefaultValue=true)
-	public boolean generateForDefinitions = false;
-	
-	@AnnotationElement(hasDefaultValue=true)
-	public boolean mindocCompatibility = false;
+	public boolean mindocMode = false;
 	
     /*
      * (non-Javadoc)

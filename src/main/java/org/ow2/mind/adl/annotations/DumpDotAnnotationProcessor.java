@@ -25,6 +25,8 @@ package org.ow2.mind.adl.annotations;
 import java.io.*;
 import java.util.Map;
 import java.util.TreeSet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.objectweb.fractal.adl.ADLException;
 import org.objectweb.fractal.adl.Definition;
@@ -32,6 +34,7 @@ import org.objectweb.fractal.adl.Node;
 import org.objectweb.fractal.adl.interfaces.Interface;
 import org.objectweb.fractal.adl.interfaces.InterfaceContainer;
 import org.objectweb.fractal.adl.types.TypeInterface;
+import org.objectweb.fractal.adl.util.FractalADLLogManager;
 import org.ow2.mind.PathHelper;
 import org.ow2.mind.adl.annotation.ADLLoaderPhase;
 import org.ow2.mind.adl.annotation.AbstractADLLoaderAnnotationProcessor;
@@ -58,7 +61,12 @@ AbstractADLLoaderAnnotationProcessor {
 	private String buildDir;
 	private GraphvizImageConverter gic;
 	private boolean generateForDefinitions = false;
-	private boolean mindocCompatibility = false;
+	private boolean mindocMode = false;
+	private String generateImages = "none";
+
+	// The dumpdot logger
+	protected static Logger dotLogger = FractalADLLogManager
+			.getLogger("DumpDot");
 
 	private void showComposite(final Definition definition, String instanceName, DotWriter currentInstanceDot, DotWriter currentDefinitionDot) {
 		final Component[] subComponents = ((ComponentContainer) definition)
@@ -66,7 +74,7 @@ AbstractADLLoaderAnnotationProcessor {
 		for (int i = 0; i < subComponents.length; i++) {
 			currentInstanceDot.addSubComponent(subComponents[i]);
 			if (generateForDefinitions)
-				currentDefinitionDot.addSubComponentWithDefinitionMode(subComponents[i], mindocCompatibility);
+				currentDefinitionDot.addSubComponentWithDefinitionMode(subComponents[i], mindocMode);
 		}
 
 		TreeSet<Binding> bindings = new TreeSet<Binding>( new BindingComparator() );
@@ -92,7 +100,7 @@ AbstractADLLoaderAnnotationProcessor {
 		for (int i = 0; i < sources.length; i++) {
 			currentInstanceDot.addSource(sources[i], false);
 			if (generateForDefinitions)
-				currentDefinitionDot.addSource(sources[i], mindocCompatibility);
+				currentDefinitionDot.addSource(sources[i], mindocMode);
 		}
 
 	}	
@@ -139,7 +147,7 @@ AbstractADLLoaderAnnotationProcessor {
 
 			if (generateForDefinitions) {
 				// the mindoc @figure tag uses the package name for folders and subfolder "doc-files"
-				if(mindocCompatibility) {
+				if(mindocMode) {
 					String packageDirName = PathHelper.fullyQualifiedNameToDirName(definition.getName());
 					// here the return dirName will start with "/" : careful !
 					// and add the mindoc "doc-files" folder as a convention
@@ -185,15 +193,27 @@ AbstractADLLoaderAnnotationProcessor {
 		// Init
 		context = cont;
 		DumpDot dotAnno = (DumpDot) annotation;
-		generateForDefinitions = dotAnno.generateForDefinitions;
-		mindocCompatibility = dotAnno.mindocCompatibility;
+		//generateForDefinitions = dotAnno.generateForDefinitions;
+		mindocMode = dotAnno.mindocMode;
 		String topLevelName = CompilerContextHelper.getExecutableName(cont);
+
+		// mindocMode forces definition-oriented generation
+		// and svg output.
+		if (mindocMode) {
+//			if ((!generateForDefinitions) || (!generateImages.equals("svg")))
+//				dotLogger.log(Level.WARNING, "@DumpDot mindocMode option forces definition-oriented generation and SVG output");
+			generateForDefinitions = true;
+			generateImages = "svg";
+		} else {
+			generateForDefinitions = false;
+			generateImages = "none";
+		}
 
 		if (topLevelName == null)
 			// default value
 			topLevelName="TopLevel";
 
-		gic = new GraphvizImageConverter(dotAnno.generateImages);
+		gic = new GraphvizImageConverter(generateImages);
 
 		buildDir = ((File) context.get(BasicOutputFileLocator.OUTPUT_DIR_CONTEXT_KEY)).getPath() + File.separator;
 
@@ -212,13 +232,13 @@ AbstractADLLoaderAnnotationProcessor {
 			showPrimitive(definition, topLevelName, topInstanceDot, topDefinitionDot);
 		}
 		topInstanceDot.close();
-		if (dotAnno.generateForDefinitions)
+		if (generateForDefinitions)
 			topDefinitionDot.close();
 
 		gic.convertDotToImage(buildDir, topLevelName);
 		if (generateForDefinitions) {
 			// the mindoc @figure tag uses the package name for folders and subfolder "doc-files"
-			if(mindocCompatibility) {
+			if(mindocMode) {
 				String packageDirName = PathHelper.fullyQualifiedNameToDirName(definition.getName());
 				// here the return dirName will start with "/" : careful !
 				// and add the mindoc "doc-files" folder as a convention
