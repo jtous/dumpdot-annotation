@@ -43,15 +43,22 @@ import org.ow2.mind.adl.ast.ImplementationContainer;
 import org.ow2.mind.adl.ast.MindInterface;
 import org.ow2.mind.adl.ast.Source;
 import org.ow2.mind.annotation.Annotation;
+import org.ow2.mind.idl.IDLLoader;
 import org.ow2.mind.io.BasicOutputFileLocator;
 import org.ow2.mind.adl.annotations.DotWriter;
+
+import com.google.inject.Inject;
+
 
 /**
  * @author Julien TOUS
  */
 public class DumpDotAnnotationProcessor extends
 AbstractADLLoaderAnnotationProcessor {
-
+	
+	@Inject 
+	protected IDLLoader idlLoaderItf; 
+	
 	private Map<Object,Object> context;
 	private String buildDir;
 
@@ -93,7 +100,7 @@ AbstractADLLoaderAnnotationProcessor {
 					.getDefinitionReference(), null, null);
 			instanceName = instanceName + "." + component.getName();
 
-			DotWriter currentDot = new DotWriter(buildDir, instanceName, context);
+			DotWriter currentDot = new DotWriter(buildDir, instanceName, component, context);
 
 			TreeSet<MindInterface> interfaces = new TreeSet<MindInterface>(new MindInterfaceComparator());
 			for (Interface itf : ((InterfaceContainer) definition).getInterfaces())
@@ -101,10 +108,10 @@ AbstractADLLoaderAnnotationProcessor {
 			
 			for (MindInterface itf : interfaces) {
 				if (itf.getRole()==TypeInterface.SERVER_ROLE) {
-					currentDot.addServer(itf.getName());
+					currentDot.addServer(itf.getName(), idlLoaderItf.load(itf.getSignature(), context).astGetSource().split(":")[0]);
 				}
 				if (itf.getRole()==TypeInterface.CLIENT_ROLE) {
-					currentDot.addClient(itf.getName());
+					currentDot.addClient(itf.getName(), idlLoaderItf.load(itf.getSignature(), context).astGetSource().split(":")[0]);
 				}
 			}
 			
@@ -142,7 +149,7 @@ AbstractADLLoaderAnnotationProcessor {
 		String topLevelName = "TopLevel"; //FIXME get the executable name.
 
 		buildDir = ((File) context.get(BasicOutputFileLocator.OUTPUT_DIR_CONTEXT_KEY)).getPath() +  File.separator;
-		DotWriter topDot = new DotWriter(buildDir, topLevelName, cont);
+		DotWriter topDot = new DotWriter(buildDir, topLevelName, null, cont);
 		if (ASTHelper.isComposite(definition)) {
 			showComposite(definition, topLevelName, topDot);
 		} else if (ASTHelper.isPrimitive(definition)) {

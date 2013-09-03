@@ -31,11 +31,11 @@ public class DotWriter {
 	private String localName;
 	private String buildDir;
 	private String fileName;
-	private String srcs="subgraph cluster_sources {\ncolor=none;\n";
+	private String srcs="{\ncolor=none;\n";
 	private int srcNb=0;
-	private String srvItfs="{rank=source; Servers [shape=Mrecord,style=filled,fillcolor=blue,label=\" Servers | {{ ";
+	private String srvItfs="{rank=source; color=none; ";
 	private int srvItfsNb=0;
-	private String cltItfs="{rank=sink Clients [shape=Mrecord,style=filled,fillcolor=blue,label=\" Clients | {{ ";;
+	private String cltItfs="{rank=sink; color=none; ";;
 	private int cltItfsNb=0;
 	private int maxItf=0; // Used to adapt the size of composite interface boxes
 	private int color=1;
@@ -45,7 +45,7 @@ public class DotWriter {
 	//@Named(DUMP_DOT)
 	public BasicImplementationLocator implementationLocatorItf = new BasicImplementationLocator();
 	
-	public DotWriter(String dir, String name, Map<Object, Object> cont) {
+	public DotWriter(String dir, String name, Component component, Map<Object, Object> cont) {
 		context=cont;
 		try {
 			compName = name;
@@ -58,18 +58,27 @@ public class DotWriter {
 			buildDir = dir;
 			fileName = buildDir + File.separator + compName + ".dot";
 			currentPrinter = new PrintWriter( new FileWriter( fileName ) );
-			writeHeader();
+			String adlSource = null;
+			if (component!=null)
+				try {
+					adlSource = ASTHelper.getResolvedDefinition(component.getDefinitionReference(),null,null).astGetSource().split(":")[0];
+				} catch (ADLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			writeHeader(adlSource);
 		} catch ( final IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 
-	private void writeHeader() {
+	private void writeHeader(String adlSource) {
 		currentPrinter.println("digraph " + localName + " {");
 		currentPrinter.println("rankdir=LR;");
 		currentPrinter.println("ranksep=3;");
-		currentPrinter.println("subgraph cluster_membrane {");
+		currentPrinter.println("subgraph cluster_membrane {" );
+		if (adlSource != null) currentPrinter.println("URL=\"" + adlSource + "\"");
 		currentPrinter.println("penwidth=15;");
 		currentPrinter.println("color=blue;");
 		currentPrinter.println("style=rounded;");
@@ -84,7 +93,7 @@ public class DotWriter {
 			int serverItf = 0;
 			DefinitionReference defRef = component.getDefinitionReference();
 			final Definition definition = ASTHelper.getResolvedDefinition(defRef, null, null);
-			currentPrinter.print(component.getName() + "[URL=\"" + compName + "." + component.getName() + ".dot\"shape=Mrecord,style=filled,fillcolor=lightgrey,label=\"" + component.getName() + " | {{ " );
+			currentPrinter.print(component.getName() + "Comp [URL=\"" + compName + "." + component.getName() + ".dot\"shape=Mrecord,style=filled,fillcolor=lightgrey,label=\"" + component.getName() + " | {{ " );
 			if (definition instanceof InterfaceContainer) {
 
 				TreeSet<MindInterface> interfaces = new TreeSet<MindInterface>(new MindInterfaceComparator());
@@ -125,14 +134,23 @@ public class DotWriter {
 
 	public void addBinding(Binding binding) {
 		color++;
-		if (color >= 12) color=1;
+		if (color >= 11) color=1;
 		String fc = binding.getFromComponent();
 		String fi = binding.getFromInterface();
 		String tc = binding.getToComponent();
 		String ti = binding.getToInterface();
-		if (fc == "this") fc="Servers";
-		if (tc == "this") tc="Clients";
-		currentPrinter.println( fc + ":" + fi + "->" + tc + ":" + ti + "[tailport=e headport=w colorscheme=\"paired12\" color=" + color + "];");	
+		String from = null;
+		String to = null;
+		if (fc == "this")
+			from = "Srv" + fi;
+		else
+			from = fc + "Comp:" + fi;
+
+		if (tc == "this") 
+			to = "Clt" + ti;
+		else
+			to = tc + "Comp:" + ti;
+		currentPrinter.println( from + "->" + to + "[tailport=e headport=w colorscheme=\"paired12\" color=" + color + "];");	
 	}
 
 	public void addSource(Source source) {
@@ -151,15 +169,13 @@ public class DotWriter {
 		}
 	}
 
-	public void addServer(String itf) {
-		if (srvItfsNb != 0) srvItfs=srvItfs + " | ";
-		srvItfs=srvItfs + "<" + itf + "> " + itf;
+	public void addServer(String itfName, String itfURI) {
+		srvItfs=srvItfs + "Srv" + itfName + " [shape=Mrecord,style=filled,fillcolor=red,label=\"" + itfName + "\", URL=\"" + itfURI + "\", height=1 ];";
 		srvItfsNb++;
 	}
 
-	public void addClient(String itf) {
-		if (cltItfsNb != 0) cltItfs=cltItfs + " | ";
-		cltItfs=cltItfs + "<" + itf + "> " + itf;
+	public void addClient(String itfName, String itfURI) {
+		cltItfs=cltItfs + "Clt" + itfName + " [shape=Mrecord,style=filled,fillcolor=green,label=\"" + itfName + "\", URL=\"" + itfURI + "\", height=1 ];";
 		cltItfsNb++;	
 	}
 
@@ -172,16 +188,12 @@ public class DotWriter {
 		if (cltItfsNb > maxItf) maxItf=cltItfsNb;
 		if (srvItfsNb > maxItf) maxItf=srvItfsNb;
 		if (srcNb > maxItf) maxItf=srcNb;
-		srvItfs=srvItfs + "}} | \",height=" + ((int)((maxItf+3)/2)) + " ];}";
-		cltItfs=cltItfs + "}} | \",height=" + ((int)((maxItf+3)/2)) + " ];}";
+		srvItfs=srvItfs + "}";
+		cltItfs=cltItfs + "}";
 		srcs=srcs + "}\n";
 		if (srvItfsNb > 0) currentPrinter.println(srvItfs);
 		if (cltItfsNb > 0) currentPrinter.println(cltItfs);
 		if (srcNb > 0) currentPrinter.println(srcs);
-		for (int i=0; i<srcNb; i++) {
-			if ((srvItfsNb*srcNb) > 0) currentPrinter.println("Servers->"+i+"[color=none]");
-			if ((srcNb*cltItfsNb) > 0)currentPrinter.println(i+"->Clients[color=none]");
-		}
 		currentPrinter.println("}");
 		currentPrinter.println("}");
 		currentPrinter.close();
