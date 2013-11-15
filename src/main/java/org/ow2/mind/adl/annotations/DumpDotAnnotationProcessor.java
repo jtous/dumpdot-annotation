@@ -107,11 +107,16 @@ AbstractADLLoaderAnnotationProcessor {
 				interfaces.add((MindInterface) itf); 
 			
 			for (MindInterface itf : interfaces) {
+				String itfSource = idlLoaderItf.load(itf.getSignature(), context).astGetSource();
+				int i = itfSource.lastIndexOf(":");
+				itfSource = itfSource.substring(0,i);
+				File itfFile=new File(itfSource);
+				itfSource = itfFile.getAbsolutePath();
 				if (itf.getRole()==TypeInterface.SERVER_ROLE) {
-					currentDot.addServer(itf.getName(), idlLoaderItf.load(itf.getSignature(), context).astGetSource().split(":")[0]);
+					currentDot.addServer(itf.getName(), itfSource);
 				}
 				if (itf.getRole()==TypeInterface.CLIENT_ROLE) {
-					currentDot.addClient(itf.getName(), idlLoaderItf.load(itf.getSignature(), context).astGetSource().split(":")[0]);
+					currentDot.addClient(itf.getName(), itfSource);
 				}
 			}
 			

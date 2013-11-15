@@ -56,7 +56,7 @@ public class DotWriter {
 				localName = name.substring(i + 1);
 			}
 			buildDir = dir;
-			fileName = buildDir + File.separator + compName + ".dot";
+			fileName = buildDir + File.separator + compName + ".gv";
 			currentPrinter = new PrintWriter( new FileWriter( fileName ) );
 			String adlSource = null;
 			if (component!=null)
@@ -93,7 +93,7 @@ public class DotWriter {
 			int serverItf = 0;
 			DefinitionReference defRef = component.getDefinitionReference();
 			final Definition definition = ASTHelper.getResolvedDefinition(defRef, null, null);
-			currentPrinter.print(component.getName() + "Comp [URL=\"" + compName + "." + component.getName() + ".dot\"shape=Mrecord,style=filled,fillcolor=lightgrey,label=\"" + component.getName() + " | {{ " );
+			currentPrinter.print(component.getName() + "Comp [URL=\"" + compName + "." + component.getName() + ".gv\",shape=Mrecord,style=filled,fillcolor=lightgrey,label=\"" + component.getName() + " | {{ " );
 			if (definition instanceof InterfaceContainer) {
 
 				TreeSet<MindInterface> interfaces = new TreeSet<MindInterface>(new MindInterfaceComparator());
@@ -164,7 +164,7 @@ public class DotWriter {
 			} catch (UnsupportedEncodingException e) {
 				s = "";
 			}
-			srcs=srcs + srcNb + "[label=\"" + source.getPath() + s + "];\n";
+			srcs=srcs + srcNb + "[shape=note,label=\"" + source.getPath() + s + "];\n";
 			srcNb++;
 		}
 	}
