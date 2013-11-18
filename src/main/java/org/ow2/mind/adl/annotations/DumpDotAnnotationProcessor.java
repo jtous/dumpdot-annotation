@@ -32,7 +32,6 @@ import org.objectweb.fractal.adl.Node;
 import org.objectweb.fractal.adl.interfaces.Interface;
 import org.objectweb.fractal.adl.interfaces.InterfaceContainer;
 import org.objectweb.fractal.adl.types.TypeInterface;
-import org.ow2.mind.PathHelper;
 import org.ow2.mind.adl.annotation.ADLLoaderPhase;
 import org.ow2.mind.adl.annotation.AbstractADLLoaderAnnotationProcessor;
 import org.ow2.mind.adl.ast.ASTHelper;
@@ -46,7 +45,6 @@ import org.ow2.mind.adl.ast.Source;
 import org.ow2.mind.annotation.Annotation;
 import org.ow2.mind.io.BasicOutputFileLocator;
 import org.ow2.mind.adl.annotations.DotWriter;
-import org.ow2.mind.compilation.CompilerContextHelper;
 
 /**
  * @author Julien TOUS
@@ -56,29 +54,22 @@ AbstractADLLoaderAnnotationProcessor {
 
 	private Map<Object,Object> context;
 	private String buildDir;
-	private GraphvizImageConverter gic;
-	private boolean generateForDefinitions = false;
-	private boolean mindocCompatibility = false;
 
-	private void showComposite(final Definition definition, String instanceName, DotWriter currentInstanceDot, DotWriter currentDefinitionDot) {
+	private void showComposite(final Definition definition, String instanceName, DotWriter currentDot) {
 		final Component[] subComponents = ((ComponentContainer) definition)
 				.getComponents();
 		for (int i = 0; i < subComponents.length; i++) {
-			currentInstanceDot.addSubComponent(subComponents[i]);
-			if (generateForDefinitions)
-				currentDefinitionDot.addSubComponentWithDefinitionMode(subComponents[i], mindocCompatibility);
+			currentDot.addSubComponent(subComponents[i]);
 		}
-
+		
 		TreeSet<Binding> bindings = new TreeSet<Binding>( new BindingComparator() );
 		for ( Binding binding: ((BindingContainer) definition).getBindings() ) {
 			bindings.add(binding);
 		}
 		for (Binding binding : bindings) {
-			currentInstanceDot.addBinding(binding);
-			if (generateForDefinitions)
-				currentDefinitionDot.addBinding(binding);
+			currentDot.addBinding(binding);
 		}
-
+		
 		for (int i = 0; i < subComponents.length; i++) {
 			final Component subComponent = subComponents[i];
 			showComponents(subComponent, instanceName);
@@ -86,15 +77,13 @@ AbstractADLLoaderAnnotationProcessor {
 
 	}
 
-	private void showPrimitive(final Definition definition, String instanceName, DotWriter currentInstanceDot, DotWriter currentDefinitionDot) {
+	private void showPrimitive(final Definition definition, String instanceName, DotWriter currentDot) {
 		final Source[] sources = ((ImplementationContainer) definition).getSources();
-
+		
 		for (int i = 0; i < sources.length; i++) {
-			currentInstanceDot.addSource(sources[i], false);
-			if (generateForDefinitions)
-				currentDefinitionDot.addSource(sources[i], mindocCompatibility);
+			currentDot.addSource(sources[i]);
 		}
-
+		
 	}	
 
 	private void showComponents(final Component component, String instanceName) {
@@ -104,60 +93,27 @@ AbstractADLLoaderAnnotationProcessor {
 					.getDefinitionReference(), null, null);
 			instanceName = instanceName + "." + component.getName();
 
-			DotWriter currentInstanceDot = new DotWriter(buildDir, instanceName, context);
-			DotWriter currentDefinitionDot = null;
-			if (generateForDefinitions)
-				currentDefinitionDot = new DotWriter(buildDir, definition.getName(), context);
+			DotWriter currentDot = new DotWriter(buildDir, instanceName, context);
 
 			TreeSet<MindInterface> interfaces = new TreeSet<MindInterface>(new MindInterfaceComparator());
 			for (Interface itf : ((InterfaceContainer) definition).getInterfaces())
 				interfaces.add((MindInterface) itf); 
-
+			
 			for (MindInterface itf : interfaces) {
 				if (itf.getRole()==TypeInterface.SERVER_ROLE) {
-					currentInstanceDot.addServer(itf.getName());
-					if (generateForDefinitions)
-						currentDefinitionDot.addServer(itf.getName());
+					currentDot.addServer(itf.getName());
 				}
 				if (itf.getRole()==TypeInterface.CLIENT_ROLE) {
-					currentInstanceDot.addClient(itf.getName());
-					if (generateForDefinitions)
-						currentDefinitionDot.addClient(itf.getName());
+					currentDot.addClient(itf.getName());
 				}
 			}
-
+			
 			if (ASTHelper.isComposite(definition)) {
-				showComposite(definition, instanceName, currentInstanceDot, currentDefinitionDot);
+				showComposite(definition, instanceName, currentDot);
 			} else if (ASTHelper.isPrimitive(definition)) {
-				showPrimitive(definition, instanceName, currentInstanceDot, currentDefinitionDot);
+				showPrimitive(definition, instanceName, currentDot);
 			}
-			currentInstanceDot.close();
-			if (generateForDefinitions)
-				currentDefinitionDot.close();
-
-			gic.convertDotToImage(buildDir, instanceName);
-
-			if (generateForDefinitions) {
-				// the mindoc @figure tag uses the package name for folders and subfolder "doc-files"
-				if(mindocCompatibility) {
-					String packageDirName = PathHelper.fullyQualifiedNameToDirName(definition.getName());
-					// here the return dirName will start with "/" : careful !
-					// and add the mindoc "doc-files" folder as a convention
-					String targetDocFilesDirName = buildDir + packageDirName.substring(1) + File.separator + "doc-files" + File.separator;
-					File currentDocFilesDir = new File(targetDocFilesDirName);
-					currentDocFilesDir.mkdirs();
-
-					// compute definition short name (removing package)
-					String shortDefName = null;
-					int i = definition.getName().lastIndexOf('.');
-					if (i == -1) shortDefName = definition.getName();
-					else shortDefName = definition.getName().substring(i + 1);
-
-					gic.convertDotToImage(buildDir, definition.getName(), targetDocFilesDirName, shortDefName);
-				} else		
-					gic.convertDotToImage(buildDir, definition.getName());
-			}
-
+			currentDot.close();
 		} catch (final ADLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -181,63 +137,18 @@ AbstractADLLoaderAnnotationProcessor {
 			final ADLLoaderPhase phase, final Map<Object, Object> cont)
 					throws ADLException {
 		assert annotation instanceof DumpDot;
-
-		// Init
 		context = cont;
-		DumpDot dotAnno = (DumpDot) annotation;
-		generateForDefinitions = dotAnno.generateForDefinitions;
-		mindocCompatibility = dotAnno.mindocCompatibility;
-		String topLevelName = CompilerContextHelper.getExecutableName(cont);
 
-		if (topLevelName == null)
-			// default value
-			topLevelName="TopLevel";
+		String topLevelName = "TopLevel"; //FIXME get the executable name.
 
-		gic = new GraphvizImageConverter(dotAnno.generateImages);
-
-		buildDir = ((File) context.get(BasicOutputFileLocator.OUTPUT_DIR_CONTEXT_KEY)).getPath() + File.separator;
-
-		// Create files
-		DotWriter topInstanceDot = new DotWriter(buildDir, topLevelName, cont);
-
-		DotWriter topDefinitionDot = null;
-		if (generateForDefinitions) {
-			topDefinitionDot = new DotWriter(buildDir, definition.getName(), cont);
-		}
-
-		// Start recursion
+		buildDir = ((File) context.get(BasicOutputFileLocator.OUTPUT_DIR_CONTEXT_KEY)).getPath() +  File.separator;
+		DotWriter topDot = new DotWriter(buildDir, topLevelName, cont);
 		if (ASTHelper.isComposite(definition)) {
-			showComposite(definition, topLevelName, topInstanceDot, topDefinitionDot);
+			showComposite(definition, topLevelName, topDot);
 		} else if (ASTHelper.isPrimitive(definition)) {
-			showPrimitive(definition, topLevelName, topInstanceDot, topDefinitionDot);
+			showPrimitive(definition, topLevelName, topDot);
 		}
-		topInstanceDot.close();
-		if (dotAnno.generateForDefinitions)
-			topDefinitionDot.close();
-
-		gic.convertDotToImage(buildDir, topLevelName);
-		if (generateForDefinitions) {
-			// the mindoc @figure tag uses the package name for folders and subfolder "doc-files"
-			if(mindocCompatibility) {
-				String packageDirName = PathHelper.fullyQualifiedNameToDirName(definition.getName());
-				// here the return dirName will start with "/" : careful !
-				// and add the mindoc "doc-files" folder as a convention
-				String targetDocFilesDirName = buildDir + packageDirName.substring(1) + File.separator + "doc-files" + File.separator;
-				File currentDocFilesDir = new File(targetDocFilesDirName);
-				currentDocFilesDir.mkdirs();
-
-				// compute definition short name (removing package)
-				String shortDefName = null;
-				int i = definition.getName().lastIndexOf('.');
-				if (i == -1) shortDefName = definition.getName();
-				else shortDefName = definition.getName().substring(i + 1);
-
-				gic.convertDotToImage(buildDir, definition.getName(), targetDocFilesDirName, shortDefName);
-			} else		
-				gic.convertDotToImage(buildDir, definition.getName());
-		}
-
-
+		topDot.close();
 		return null;
 	}
 
