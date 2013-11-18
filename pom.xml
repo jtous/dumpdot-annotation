@@ -1,48 +1,46 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
-	<modelVersion>4.0.0</modelVersion>
+    <modelVersion>4.0.0</modelVersion>
 
-	<parent>
-		<groupId>org.ow2.mind</groupId>
-		<artifactId>mind-compiler</artifactId>
-		<version>2.1-SNAPSHOT</version>
-	</parent>
+    <parent>
+        <groupId>org.ow2.mind</groupId>
+        <artifactId>mind-compiler</artifactId>
+        <version>2.1-SNAPSHOT</version>
+    </parent>
 
-	<artifactId>dumpdot-annotation</artifactId>
-	<packaging>jar</packaging>
-	<name>DumpDot Annotation</name>
+    <artifactId>dumpdot-annotation</artifactId>
+    <packaging>jar</packaging>
+    <name>DumpDot Annotation</name>
+    
+    <description>DumpDot ADL annotation of the Mind programming model.</description>
+    
+    <dependencies>
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <classifier>jdk15</classifier>
+        </dependency>
 
-	<description>DumpDot ADL annotation of the Mind programming model.</description>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>fractal-runtime</artifactId>
+            <scope>test</scope>
+        </dependency>
 
-	<dependencies>
-		<dependency>
-			<groupId>org.testng</groupId>
-			<artifactId>testng</artifactId>
-			<classifier>jdk15</classifier>
-		</dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>adl-frontend</artifactId>
+        </dependency>
 
-		<dependency>
-			<groupId>${project.groupId}</groupId>
-			<artifactId>fractal-runtime</artifactId>
-			<scope>test</scope>
-		</dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>common-frontend</artifactId>
+        </dependency>
 
-		<dependency>
-			<groupId>${project.groupId}</groupId>
-			<artifactId>adl-frontend</artifactId>
-		</dependency>
-
-		<dependency>
-			<groupId>${project.groupId}</groupId>
-			<artifactId>common-frontend</artifactId>
-		</dependency>
-
-		<dependency>
-			<groupId>${project.groupId}</groupId>
-			<artifactId>adl-backend</artifactId>
-		</dependency>
-
-	</dependencies>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>adl-backend</artifactId>
+        </dependency>
+    </dependencies>
 </project>
