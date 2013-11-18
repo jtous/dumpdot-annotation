@@ -42,6 +42,7 @@ public class DotWriter {
 	private int maxItf=0; // Used to adapt the size of composite interface boxes
 	private int color=1;
 	private Map<Object, Object> context;
+	private boolean mindocCompatibility = false;
 
 	//@Inject
 	//@Named(DUMP_DOT)
@@ -66,9 +67,30 @@ public class DotWriter {
 			e.printStackTrace();
 		}
 	}
+	
+	public DotWriter(String dir, String name, Map<Object, Object> cont, boolean mindocCompatibility) {
+		this.mindocCompatibility = mindocCompatibility;
+		context=cont;
+		try {
+			compName = name;
+			final int i = name.lastIndexOf('.');
+			if (i == -1 ) { 
+				localName = name;
+			} else {
+				localName = name.substring(i + 1);
+			}
+			buildDir = dir;
+			fileName = buildDir + File.separator + compName + ".dot";
+			currentPrinter = new PrintWriter( new FileWriter( fileName ) );
+			writeHeader();
+		} catch ( final IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 
 	private void writeHeader() {
-		currentPrinter.println("digraph " + localName + " {");
+		currentPrinter.println("digraph " + localName  + " {");
 		currentPrinter.println("rankdir=LR;");
 		currentPrinter.println("ranksep=3;");
 		currentPrinter.println("subgraph cluster_membrane {");
@@ -76,8 +98,6 @@ public class DotWriter {
 		currentPrinter.println("color=blue;");
 		currentPrinter.println("style=rounded;");
 		//currentPrinter.println("height=20;"); // max number of itf /50*18 
-
-
 	}
 
 	public void addSubComponent(Component component) {
@@ -133,7 +153,7 @@ public class DotWriter {
 	 * TODO (SSZ): enable a dot mode ?
 	 * @param component
 	 */
-	public void addSubComponentWithDefinitionMode(Component component, boolean mindocCompatibility) {
+	public void addSubComponentWithDefinitionMode(Component component) {
 		try {
 			int clientItf = 0;
 			int serverItf = 0;
@@ -142,7 +162,7 @@ public class DotWriter {
 
 			// the mindoc @figure tag uses the package name for folders and subfolder "doc-files"
 			if(mindocCompatibility) {
-
+				// calculate strings
 				String currentFileName = compName;
 				String[] splitName = NameHelper.splitName(currentFileName);
 				StringBuilder backToOutputDir = new StringBuilder();
@@ -221,7 +241,7 @@ public class DotWriter {
 		currentPrinter.println( fc + ":" + fi + "->" + tc + ":" + ti + "[tailport=e headport=w colorscheme=\"paired12\" color=" + color + "];");	
 	}
 
-	public void addSource(Source source, boolean mindocCompatibility) {
+	public void addSource(Source source) {
 		if (source.getPath() != null) {
 			String s = "";
 			if (!mindocCompatibility) {

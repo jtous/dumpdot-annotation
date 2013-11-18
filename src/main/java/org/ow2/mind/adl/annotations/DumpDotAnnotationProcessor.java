@@ -22,7 +22,7 @@
 
 package org.ow2.mind.adl.annotations;
 
-import java.io.*;
+import java.io.File;
 import java.util.Map;
 import java.util.TreeSet;
 import java.util.logging.Level;
@@ -47,9 +47,8 @@ import org.ow2.mind.adl.ast.ImplementationContainer;
 import org.ow2.mind.adl.ast.MindInterface;
 import org.ow2.mind.adl.ast.Source;
 import org.ow2.mind.annotation.Annotation;
-import org.ow2.mind.io.BasicOutputFileLocator;
-import org.ow2.mind.adl.annotations.DotWriter;
 import org.ow2.mind.compilation.CompilerContextHelper;
+import org.ow2.mind.io.BasicOutputFileLocator;
 
 /**
  * @author Julien TOUS
@@ -74,7 +73,7 @@ AbstractADLLoaderAnnotationProcessor {
 		for (int i = 0; i < subComponents.length; i++) {
 			currentInstanceDot.addSubComponent(subComponents[i]);
 			if (generateForDefinitions)
-				currentDefinitionDot.addSubComponentWithDefinitionMode(subComponents[i], mindocMode);
+				currentDefinitionDot.addSubComponentWithDefinitionMode(subComponents[i]);
 		}
 
 		TreeSet<Binding> bindings = new TreeSet<Binding>( new BindingComparator() );
@@ -98,9 +97,9 @@ AbstractADLLoaderAnnotationProcessor {
 		final Source[] sources = ((ImplementationContainer) definition).getSources();
 
 		for (int i = 0; i < sources.length; i++) {
-			currentInstanceDot.addSource(sources[i], false);
+			currentInstanceDot.addSource(sources[i]);
 			if (generateForDefinitions)
-				currentDefinitionDot.addSource(sources[i], mindocMode);
+				currentDefinitionDot.addSource(sources[i]);
 		}
 
 	}	
@@ -112,10 +111,13 @@ AbstractADLLoaderAnnotationProcessor {
 					.getDefinitionReference(), null, null);
 			instanceName = instanceName + "." + component.getName();
 
+			dotLogger.log(Level.FINE, "Building Dot file for " + instanceName + " instance");
 			DotWriter currentInstanceDot = new DotWriter(buildDir, instanceName, context);
 			DotWriter currentDefinitionDot = null;
-			if (generateForDefinitions)
-				currentDefinitionDot = new DotWriter(buildDir, definition.getName(), context);
+			if (generateForDefinitions) {
+				currentDefinitionDot = new DotWriter(buildDir, definition.getName(), context, true);
+				dotLogger.log(Level.FINE, "Building Dot file for " + definition.getName() + " definition");
+			}
 
 			TreeSet<MindInterface> interfaces = new TreeSet<MindInterface>(new MindInterfaceComparator());
 			for (Interface itf : ((InterfaceContainer) definition).getInterfaces())
@@ -200,8 +202,8 @@ AbstractADLLoaderAnnotationProcessor {
 		// mindocMode forces definition-oriented generation
 		// and svg output.
 		if (mindocMode) {
-//			if ((!generateForDefinitions) || (!generateImages.equals("svg")))
-//				dotLogger.log(Level.WARNING, "@DumpDot mindocMode option forces definition-oriented generation and SVG output");
+			//			if ((!generateForDefinitions) || (!generateImages.equals("svg")))
+			//				dotLogger.log(Level.WARNING, "@DumpDot mindocMode option forces definition-oriented generation and SVG output");
 			generateForDefinitions = true;
 			generateImages = "svg";
 		} else {
@@ -218,11 +220,13 @@ AbstractADLLoaderAnnotationProcessor {
 		buildDir = ((File) context.get(BasicOutputFileLocator.OUTPUT_DIR_CONTEXT_KEY)).getPath() + File.separator;
 
 		// Create files
+		dotLogger.log(Level.FINE, "Building Dot file for " + topLevelName + " instance");
 		DotWriter topInstanceDot = new DotWriter(buildDir, topLevelName, cont);
 
 		DotWriter topDefinitionDot = null;
 		if (generateForDefinitions) {
-			topDefinitionDot = new DotWriter(buildDir, definition.getName(), cont);
+			dotLogger.log(Level.FINE, "Building Dot file for " + definition.getName() + " definition");
+			topDefinitionDot = new DotWriter(buildDir, definition.getName(), cont, true);
 		}
 
 		// Start recursion
@@ -235,7 +239,8 @@ AbstractADLLoaderAnnotationProcessor {
 		if (generateForDefinitions)
 			topDefinitionDot.close();
 
-		gic.convertDotToImage(buildDir, topLevelName);
+		if (!generateImages.equals("none"))
+			gic.convertDotToImage(buildDir, topLevelName);
 		if (generateForDefinitions) {
 			// the mindoc @figure tag uses the package name for folders and subfolder "doc-files"
 			if(mindocMode) {
@@ -252,9 +257,11 @@ AbstractADLLoaderAnnotationProcessor {
 				if (i == -1) shortDefName = definition.getName();
 				else shortDefName = definition.getName().substring(i + 1);
 
+				dotLogger.log(Level.FINE, "Converting " + buildDir.toString() + definition.getName() + ".dot to " + targetDocFilesDirName + shortDefName + "." + generateImages);
 				gic.convertDotToImage(buildDir, definition.getName(), targetDocFilesDirName, shortDefName);
 			} else		
-				gic.convertDotToImage(buildDir, definition.getName());
+				if (!generateImages.equals("none"))
+					gic.convertDotToImage(buildDir, definition.getName());
 		}
 
 
