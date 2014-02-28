@@ -154,12 +154,13 @@ public class DotWriter {
 	}
 
 	public void addSource(Source source) {
-		if (source.getPath() != null) {
-			URL url = implementationLocatorItf.findSource(source.getPath(), context);
+		String srcPath=source.getPath();
+		if (srcPath != null) {
+			URL url = implementationLocatorItf.findSource(srcPath, context);
 			String s;
 			try {
 				File f;
-				f = new File( URLDecoder.decode( url.getFile(), "UTF-8" ));
+				f = new File( URLDecoder.decode( url.getFile().replace("+","%2B"), "UTF-8" ));
 				s = "\", URL=\"" + f.getAbsolutePath() + "\"";
 			} catch (UnsupportedEncodingException e) {
 				s = "";
