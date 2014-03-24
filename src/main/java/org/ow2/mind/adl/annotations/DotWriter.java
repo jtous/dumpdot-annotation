@@ -26,18 +26,61 @@ import org.objectweb.fractal.adl.types.TypeInterface;
 
 public class DotWriter {
 	//public static final String            DUMP_DOT = "DumpDot";
+	/**
+	 * The PrintWriter that will be used for all code generation of this component.
+	 */
 	private PrintWriter currentPrinter;
+	/**
+	 * The instance name of this component :
+	 * containing all levels of composite from the top level component
+	 */
 	private String compName;
+	/**
+	 * The instance name of this component :
+	 * as stated on the "contains" line in ADL
+	 */
 	private String localName;
+	/**
+	 * The directory where the graphviz files will be located
+	 */
 	private String buildDir;
+	/**
+	 * The graphviz file for this component
+	 */
 	private String fileName;
+	/**
+	 * The graphviz source code string that will represent the sources 
+	 */
 	private String srcs="{\ncolor=none;\n";
+	/**
+	 * A counter for the number of source files
+	 */
 	private int srcNb=0;
+	/**
+	 * The graphviz source code string that will represent the server interfaces 
+	 */
 	private String srvItfs="{rank=source; color=none; ";
+	/**
+	 * A counter for the number of server interfaces
+	 */
 	private int srvItfsNb=0;
-	private String cltItfs="{rank=sink; color=none; ";;
+	/**
+	 * The graphviz source code string that will represent the client interfaces 
+	 */
+	private String cltItfs="{rank=sink; color=none; ";
+	/**
+	 * A counter for the number of client interfaces
+	 */
 	private int cltItfsNb=0;
-	private int maxItf=0; // Used to adapt the size of composite interface boxes
+	/**
+	 * Either the same as srvItfsNb or cltItfsNb
+	 * Used to adapt the size of composite interface boxes
+	 */
+	private int maxItf=0;
+	/**
+	 * A graphviz color identifier
+	 * Used for the edges (helps visual identification)
+	 */
 	private int color=1;
 	private Map<Object, Object> context;
 
@@ -45,6 +88,13 @@ public class DotWriter {
 	//@Named(DUMP_DOT)
 	public BasicImplementationLocator implementationLocatorItf = new BasicImplementationLocator();
 	
+	/**
+	 * Initialize the DotWriter with the associated instance info 
+	 * @param dir the build directory for the output file
+	 * @param name the full instance name (path in the instance diagram)
+	 * @param component The "type" of the component
+	 * @param cont the context
+	 */
 	public DotWriter(String dir, String name, Component component, Map<Object, Object> cont) {
 		context=cont;
 		try {
@@ -73,6 +123,10 @@ public class DotWriter {
 		}
 	}
 
+	/**
+	 * Write the header of the graphviz source code
+	 * @param adlSource The ADL file describing the component 
+	 */
 	private void writeHeader(String adlSource) {
 		currentPrinter.println("digraph " + localName + " {");
 		currentPrinter.println("rankdir=LR;");
@@ -87,6 +141,10 @@ public class DotWriter {
 
 	}
 
+	/**
+	 * Write the graphviz source code for a contained subcomponent 
+	 * @param component the subcomponent
+	 */
 	public void addSubComponent(Component component) {
 		try {
 			int clientItf = 0;
@@ -132,6 +190,10 @@ public class DotWriter {
 		}
 	}
 
+	/**
+	 * Add a binding to the graphviz source code
+	 * @param binding : the Binding
+	 */
 	public void addBinding(Binding binding) {
 		color++;
 		if (color >= 11) color=1;
@@ -153,28 +215,37 @@ public class DotWriter {
 		currentPrinter.println( from + "->" + to + "[tailport=e headport=w colorscheme=\"paired12\" color=" + color + "];");	
 	}
 
+	/**
+	 * Add a source file in  the graphviz source code 
+	 * @param source : the source File
+	 */
 	public void addSource(Source source) {
 		String srcPath=source.getPath();
 		if (srcPath != null) {
 			URL url = implementationLocatorItf.findSource(srcPath, context);
 			String s;
-			try {
-				File f;
-				f = new File( URLDecoder.decode( url.getFile().replace("+","%2B"), "UTF-8" ));
-				s = "\", URL=\"" + f.getAbsolutePath() + "\"";
-			} catch (UnsupportedEncodingException e) {
-				s = "";
-			}
+			File f; f = new File( url.getPath() );
+			s = "\", URL=\"" + f.getAbsolutePath() + "\"";
 			srcs=srcs + srcNb + "[shape=note,label=\"" + source.getPath() + s + "];\n";
 			srcNb++;
 		}
 	}
 
+	/**
+	 * Add a server interface to the graphviz source code.
+	 * @param itfName : the name of the interface instance (as on the "provides" line in ADL)
+	 * @param itfURI : the source file path for the .itf file.
+	 */
 	public void addServer(String itfName, String itfURI) {
 		srvItfs=srvItfs + "Srv" + itfName + " [shape=Mrecord,style=filled,fillcolor=red,label=\"" + itfName + "\", URL=\"" + itfURI + "\", height=1 ];";
 		srvItfsNb++;
 	}
-
+	
+	/**
+	 * Add a client interface to the graphviz source code.
+	 * @param itfName : the name of the interface instance (as on the "requires" line in ADL)
+	 * @param itfURI : the source file path for the .itf file.
+	 */
 	public void addClient(String itfName, String itfURI) {
 		cltItfs=cltItfs + "Clt" + itfName + " [shape=Mrecord,style=filled,fillcolor=green,label=\"" + itfName + "\", URL=\"" + itfURI + "\", height=1 ];";
 		cltItfsNb++;	
@@ -185,6 +256,10 @@ public class DotWriter {
 
 	}
 
+	/**
+	 * Write the footer for the graphviz source file.
+	 * (Closes the opened structures)
+	 */
 	private void writeFooter() {
 		if (cltItfsNb > maxItf) maxItf=cltItfsNb;
 		if (srvItfsNb > maxItf) maxItf=srvItfsNb;
